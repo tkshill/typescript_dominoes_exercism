@@ -1,0 +1,18 @@
+{
+  "version": "0.0.13",
+  "name": "dominoes",
+  "description": "Down with Graph theory and Typescript",
+  "dependencies": {
+    "typescript": "4.2.3"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "react-scripts": "1.0.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  }
+}
