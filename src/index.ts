@@ -47,11 +47,11 @@ const toAdjacencyMatrix: ToAdjacencyMatrix = (dominoes) => {
   const vertice = (x: number) => vertices.findIndex((n) => n === x);
 
   // empty graph
-  const initGraph: AdjencyMatrix = Array.from(Array(vertices.length), () =>
+  const initMatrix: AdjencyMatrix = Array.from(Array(vertices.length), () =>
     [...new Array(vertices.length)].map((_) => false)
   );
 
-  const fillGraph = (graph: AdjencyMatrix, domino: Domino) => {
+  const fillMatrix = (graph: AdjencyMatrix, domino: Domino) => {
     const [x, y] = domino;
     graph[vertice(x)]![vertice(y)] = true;
     graph[vertice(y)]![vertice(x)] = true;
@@ -59,7 +59,7 @@ const toAdjacencyMatrix: ToAdjacencyMatrix = (dominoes) => {
     return graph;
   };
 
-  return dominoes.reduce(fillGraph, initGraph);
+  return dominoes.reduce(fillMatrix, initMatrix);
 };
 
 type ToAdjencyList = (_: AdjencyMatrix) => AdjencyList;
@@ -73,14 +73,16 @@ const toAdjencyList: ToAdjencyList = (graph) =>
   );
 
 // checks to see what nodes can be visited from other nodes.
+// updates the visited array every time it gets to a new one
 // if graph is connected, dfs should visit every node
 type DFS = (_: AdjencyList, __: boolean[], ___: number) => void;
-const depthFirstSearch: DFS = (graph, visited, index) => {
-  visited[index] = true;
+const depthFirstSearch: DFS = (graph, visited, node) => {
+  visited[node] = true;
 
-  graph[index]!.filter((index2) => !visited[index2]).forEach((n) =>
-    depthFirstSearch(graph, visited, n)
-  );
+  graph[node]!.filter((adjacent) => !visited[adjacent]) // get unvisited nodes
+    .forEach((unvisitedNode) =>
+      depthFirstSearch(graph, visited, unvisitedNode)
+    );
 };
 
 // determine if the graph of the list of dominoes is a connected graph
@@ -89,6 +91,7 @@ const isConnected: EulerCondition = (dominoes) => {
   const visited: boolean[] = [...new Array(vertices.length)].map((_) => false);
   const graph = toAdjencyList(toAdjacencyMatrix(dominoes));
 
+  // time to spelunk
   depthFirstSearch(graph, visited, 0);
 
   return visited.every((x) => x === true);
@@ -98,93 +101,20 @@ const isConnected: EulerCondition = (dominoes) => {
 const allEvenDegree: EulerCondition = (dominoes) => {
   const isEven = (n: number) => n % 2 === 0;
 
+  // values increment every time a number appears
   const addToMap = (m: Map<number, number>, key: number) =>
     m.has(key) ? m.set(key, m.get(key)! + 1) : m.set(key, 1);
 
-  return [...dominoes.flatMap(id).reduce(addToMap, new Map()).values()].every(
-    isEven
-  );
+  const newMap: number[] = [
+    ...dominoes
+      .flatMap(id) // concat + flatten
+      .reduce(addToMap, new Map()) // fold into a map
+      .values()
+  ]; // back to array
+
+  return newMap.every(isEven);
 };
 
-const canChain: EulerCondition = (dominoes) =>
+// PUTTING IT ALL TOGETHER
+export const canChain: EulerCondition = (dominoes) =>
   dominoes.length === 0 || (allEvenDegree(dominoes) && isConnected(dominoes));
-
-console.log("Test run");
-console.log(canChain([]) === true);
-console.log(canChain([[1, 1]]) === true);
-console.log(canChain([[1, 2]]) === false);
-console.log(
-  canChain([
-    [1, 2],
-    [3, 1],
-    [2, 3]
-  ]) === true
-);
-console.log(
-  canChain([
-    [1, 2],
-    [1, 3],
-    [2, 3]
-  ]) === true
-);
-console.log(
-  canChain([
-    [1, 2],
-    [4, 1],
-    [2, 3]
-  ]) === false
-);
-console.log(
-  canChain([
-    [1, 1],
-    [2, 2]
-  ]) === false
-);
-console.log(
-  canChain([
-    [1, 2],
-    [2, 1],
-    [3, 4],
-    [4, 3]
-  ]) === false
-);
-console.log(
-  canChain([
-    [5, 5],
-    [1, 2],
-    [2, 3],
-    [3, 1]
-  ]) === false
-);
-console.log(
-  canChain([
-    [1, 2],
-    [2, 3],
-    [3, 1],
-    [2, 4],
-    [2, 4]
-  ]) === true
-);
-console.log(
-  canChain([
-    [1, 2],
-    [2, 3],
-    [3, 1],
-    [1, 1],
-    [2, 2],
-    [3, 3]
-  ]) === true
-);
-console.log(
-  canChain([
-    [1, 2],
-    [5, 3],
-    [3, 1],
-    [1, 2],
-    [2, 4],
-    [1, 6],
-    [2, 3],
-    [3, 4],
-    [5, 6]
-  ]) === true
-);
