@@ -33,28 +33,28 @@ type AdjencyList = number[][]; // Representation as a list of connected nodes
 type EulerCondition = (ds: EdgeSet) => boolean; // Functions that test our Euler's theory
 
 // helper functions
-const id = (x: any) => x;
+const id = (x: any) => x; // yes, this returns itself.
 
-type FindVertices = (_: EdgeSet) => number[];
-const findVertices: FindVertices = (dominoes) => [
-  ...new Set(dominoes.flatMap(id))
-];
+// simplifies an edgeset down to its unique nodes by converting to and from a set
+type GetNodes = (_: EdgeSet) => number[];
+const getNodes: GetNodes = (dominoes) => [...new Set(dominoes.flatMap(id))];
 
 // conversion functions
 type ToAdjacencyMatrix = (_: EdgeSet) => AdjencyMatrix;
 const toAdjacencyMatrix: ToAdjacencyMatrix = (dominoes) => {
-  const vertices = findVertices(dominoes);
-  const vertice = (x: number) => vertices.findIndex((n) => n === x);
+  const nodes = getNodes(dominoes);
+  const nodeToBool = (digit: number) =>
+    nodes.findIndex((node) => node === digit);
 
   // empty graph
-  const initMatrix: AdjencyMatrix = Array.from(Array(vertices.length), () =>
-    [...new Array(vertices.length)].map((_) => false)
+  const initMatrix: AdjencyMatrix = Array.from(Array(nodes.length), () =>
+    [...new Array(nodes.length)].map((_) => false)
   );
 
   const fillMatrix = (graph: AdjencyMatrix, domino: Domino) => {
     const [x, y] = domino;
-    graph[vertice(x)]![vertice(y)] = true;
-    graph[vertice(y)]![vertice(x)] = true;
+    graph[nodeToBool(x)]![nodeToBool(y)] = true;
+    graph[nodeToBool(y)]![nodeToBool(x)] = true;
 
     return graph;
   };
@@ -85,10 +85,10 @@ const depthFirstSearch: DFS = (graph, visited, node) => {
     );
 };
 
-// determine if the graph of the list of dominoes is a connected graph
+// determine if the domino array representing the edgeset of a graph is a connected graph
 const isConnected: EulerCondition = (dominoes) => {
-  const vertices = findVertices(dominoes);
-  const visited: boolean[] = [...new Array(vertices.length)].map((_) => false);
+  const nodes = getNodes(dominoes);
+  const visited: boolean[] = [...new Array(nodes.length)].map((_) => false);
   const graph = toAdjencyList(toAdjacencyMatrix(dominoes));
 
   // time to spelunk
@@ -101,18 +101,18 @@ const isConnected: EulerCondition = (dominoes) => {
 const allEvenDegree: EulerCondition = (dominoes) => {
   const isEven = (n: number) => n % 2 === 0;
 
-  // values increment every time a number appears
+  // adds to map of numbers in the domino set and how many times they appear
   const addToMap = (m: Map<number, number>, key: number) =>
     m.has(key) ? m.set(key, m.get(key)! + 1) : m.set(key, 1);
 
-  const newMap: number[] = [
+  const nodeCounts: number[] = [
     ...dominoes
       .flatMap(id) // concat + flatten
       .reduce(addToMap, new Map()) // fold into a map
       .values()
   ]; // back to array
 
-  return newMap.every(isEven);
+  return nodeCounts.every(isEven);
 };
 
 // PUTTING IT ALL TOGETHER
