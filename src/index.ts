@@ -21,7 +21,8 @@ type Graph<T> = T[][];
 // helper functions
 const id = (x: any) => x;
 
-const findVertices = (dominoes: Domino[]): number[] => [
+type FindVertices = (_: Domino[]) => number[];
+const findVertices: FindVertices = (dominoes) => [
   ...new Set(dominoes.flatMap(id))
 ];
 
@@ -53,19 +54,13 @@ const makeGraph: GraphMaker = (dominoes) => {
   return graph.map(toNums);
 };
 
-type DFS = (_: Graph<number>, __: boolean[], ___: number) => number;
+type DFS = (_: Graph<number>, __: boolean[], ___: number) => void;
 const depthFirstSearch: DFS = (graph, visited, index) => {
-  if (visited.every((x) => x === true)) {
-    return 0;
-  }
-
   visited[index] = true;
 
-  const result = graph[index]!.filter((index2) => !visited[index2])
-    .map((n) => depthFirstSearch(graph, visited, n))
-    .reduce((m, n) => m + n, 0);
-
-  return result + 1;
+  graph[index]!.filter((index2) => !visited[index2]).forEach((n) =>
+    depthFirstSearch(graph, visited, n)
+  );
 };
 
 type EulerCondition = (ds: Domino[]) => boolean;
@@ -75,9 +70,10 @@ const isConnected: EulerCondition = (dominoes) => {
   const vertices = findVertices(dominoes);
   const visited: boolean[] = [...new Array(vertices.length)].map((_) => false);
   const graph = makeGraph(dominoes);
-  const searchResult = depthFirstSearch(graph, visited, 0);
 
-  return searchResult === vertices.length;
+  depthFirstSearch(graph, visited, 0);
+
+  return visited.every((x) => x === true);
 };
 
 // check if every number in the dominoes has an even number of representations
