@@ -1,60 +1,80 @@
 // Solving Domino problems with graph theory
 //
-// If you imagine a chainable set of dominos as a loop, it could also be represented as a Euler cycle.
+// We can model our set of dominoes as a graph.
+// Specifically, the set of dominoes can be treated as an EdgeSet representation of a graph.
 //
-// A euler cycle is essentially a connected graph where you can go from one node and pass through every other node back to
-// the one you started with without repeats or backtracking.
+// To ask if a set of dominoes can be connected, can be rephrased as
+// "Does this graph have a Euler cycle?"
 //
-//There is theorem (Euler's Theorem): "A connected graph has an Euler cycle if and only if every vertex has even degree".
+// A euler cycle is essentially a connected graph where you can start from one node and
+// pass through every other node back to the one you started with
+// without repeats or backtracking.
+//
+// How do we determine if a graph has a Euler's cycle?
+//
+// Well, there is theorem (Euler's Theorem):
+// "A Connected graph has an Euler cycle if and only if every vertex has even degree".
 //
 // So our solution now has two parts:
 //
-// check if every vertex (number) has an even degree (appears twice)
+// check if every vertex (number) has an even degree (appears as a multiple of two)
 // check if the dominoes can be converted to a connected graph
 
 type Dnum = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 type Domino = [Dnum, Dnum];
 
-type Graph<T> = T[][];
+type EdgeSet = Domino[]; // A representation of the set of edges in a graph
+
+type AdjencyMatrix = boolean[][]; // Representation of a graph as a matrix of filled/unfilled cells
+
+type AdjencyList = number[][]; // Representation as a list of connected nodes
+
+type EulerCondition = (ds: EdgeSet) => boolean; // Functions that test our Euler's theory
 
 // helper functions
 const id = (x: any) => x;
 
-type FindVertices = (_: Domino[]) => number[];
+type FindVertices = (_: EdgeSet) => number[];
 const findVertices: FindVertices = (dominoes) => [
   ...new Set(dominoes.flatMap(id))
 ];
 
-// convert a list of dominoes to a Graph
-type GraphMaker = (_: Domino[]) => Graph<number>;
-const makeGraph: GraphMaker = (dominoes) => {
+// conversion functions
+type ToAdjacencyMatrix = (_: EdgeSet) => AdjencyMatrix;
+const toAdjacencyMatrix: ToAdjacencyMatrix = (dominoes) => {
   const vertices = findVertices(dominoes);
   const vertice = (x: number) => vertices.findIndex((n) => n === x);
 
   // empty graph
-  const graph: Graph<boolean> = Array.from(Array(vertices.length), () =>
+  const initGraph: AdjencyMatrix = Array.from(Array(vertices.length), () =>
     [...new Array(vertices.length)].map((_) => false)
   );
 
-  const fillGraph = (domino: Domino) => {
+  const fillGraph = (graph: AdjencyMatrix, domino: Domino) => {
     const [x, y] = domino;
     graph[vertice(x)]![vertice(y)] = true;
     graph[vertice(y)]![vertice(x)] = true;
+
+    return graph;
   };
 
-  dominoes.forEach(fillGraph);
-
-  const toNums = (bools: boolean[]) =>
-    bools
-      .map((val, index): [number, boolean] => [index, val]) // add indexes
-      .filter(([_, val]) => val) // filter by truth
-      .map(([index, _]) => index); // keep the indexes
-
-  return graph.map(toNums);
+  return dominoes.reduce(fillGraph, initGraph);
 };
 
-type DFS = (_: Graph<number>, __: boolean[], ___: number) => void;
+type ToAdjencyList = (_: AdjencyMatrix) => AdjencyList;
+const toAdjencyList: ToAdjencyList = (graph) =>
+  graph.map(
+    (row) =>
+      row
+        .map((val, index): [number, boolean] => [index, val]) // add indexes
+        .filter(([_, val]) => val) // filter unfilled cells
+        .map(([index, _]) => index) // keep indexes
+  );
+
+// checks to see what nodes can be visited from other nodes.
+// if graph is connected, dfs should visit every node
+type DFS = (_: AdjencyList, __: boolean[], ___: number) => void;
 const depthFirstSearch: DFS = (graph, visited, index) => {
   visited[index] = true;
 
@@ -63,13 +83,11 @@ const depthFirstSearch: DFS = (graph, visited, index) => {
   );
 };
 
-type EulerCondition = (ds: Domino[]) => boolean;
-
 // determine if the graph of the list of dominoes is a connected graph
 const isConnected: EulerCondition = (dominoes) => {
   const vertices = findVertices(dominoes);
   const visited: boolean[] = [...new Array(vertices.length)].map((_) => false);
-  const graph = makeGraph(dominoes);
+  const graph = toAdjencyList(toAdjacencyMatrix(dominoes));
 
   depthFirstSearch(graph, visited, 0);
 
