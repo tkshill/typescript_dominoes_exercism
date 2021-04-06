@@ -22,8 +22,8 @@ type Graph<T> = T[][];
 // helper functions
 const id = (x: any) => x;
 
-type findVertices = (_: Domino[]) => number[];
-const findVertices: findVertices = (dominoes) => [
+type FindVertices = (_: Domino[]) => number[];
+const findVertices: FindVertices = (dominoes) => [
   ...new Set(dominoes.flatMap(id))
 ];
 
