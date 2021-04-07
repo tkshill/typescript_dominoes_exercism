@@ -116,12 +116,12 @@ If a graph is connected, dfs should visit every node.
 
 */
 type DFS = (_: AdjacencyList, __: NodeStatus[], ___: number) => void;
-const depthFirstSearch: DFS = (graph, visited, node) => {
-  visited[node] = "Visited";
+const depthFirstSearch: DFS = (graph, statuses, node) => {
+  statuses[node] = "Visited";
 
-  graph[node]!.filter((adjacent) => !visited[adjacent]) // get unvisited nodes
+  graph[node]!.filter((adjacent) => statuses[adjacent] === "Not Visited") // get unvisited nodes
     .forEach((unvisitedNode) =>
-      depthFirstSearch(graph, visited, unvisitedNode)
+      depthFirstSearch(graph, statuses, unvisitedNode)
     );
 };
 
