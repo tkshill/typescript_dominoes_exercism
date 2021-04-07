@@ -71,7 +71,7 @@ type EulerCondition = (_: EdgeSet) => boolean; // Functions that test our Euler'
 const id = (x: any) => x; // yes, this returns itself.
 
 // simplifies an edgeset down to its unique nodes by converting to and from a set
-type GetNodes = (_: EdgeSet) => number[];
+type GetNodes = (_: EdgeSet) => NodeNumber[];
 const getNodes: GetNodes = (dominoes) => [...new Set(dominoes.flatMap(id))];
 
 // ------------------------- CONVERSION FUNCTIONS -------------------
@@ -79,7 +79,7 @@ const getNodes: GetNodes = (dominoes) => [...new Set(dominoes.flatMap(id))];
 type ToMatrix = (_: EdgeSet) => AdjacencyMatrix;
 const toMatrix: ToMatrix = (dominoes) => {
   const nodes = getNodes(dominoes);
-  const nodeToBool = (digit: number) =>
+  const nodeToBool = (digit: NodeNumber) =>
     nodes.findIndex((node) => node === digit);
 
   // initial graph of all false values
@@ -144,7 +144,7 @@ const allEvenDegree: EulerCondition = (dominoes) => {
   const isEven = (n: number) => n % 2 === 0;
 
   // adds to map of numbers in the domino set and how many times they appear
-  const addToMap = (m: Map<number, number>, key: number) =>
+  const addToMap = (m: Map<NodeNumber, number>, key: NodeNumber) =>
     m.has(key) ? m.set(key, m.get(key)! + 1) : m.set(key, 1);
 
   const nodeCounts: number[] = [
