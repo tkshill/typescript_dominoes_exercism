@@ -40,18 +40,18 @@ type GetNodes = (_: EdgeSet) => number[];
 const getNodes: GetNodes = (dominoes) => [...new Set(dominoes.flatMap(id))];
 
 // conversion functions
-type ToAdjacencyMatrix = (_: EdgeSet) => AdjencyMatrix;
-const toAdjacencyMatrix: ToAdjacencyMatrix = (dominoes) => {
+type ToMatrix = (_: EdgeSet) => AdjencyMatrix;
+const toMatrix: ToMatrix = (dominoes) => {
   const nodes = getNodes(dominoes);
   const nodeToBool = (digit: number) =>
     nodes.findIndex((node) => node === digit);
 
-  // empty graph
+  // initial graph of all false values
   const initMatrix: AdjencyMatrix = Array.from(Array(nodes.length), () =>
     [...new Array(nodes.length)].map((_) => false)
   );
 
-  const fillMatrix = (graph: AdjencyMatrix, domino: Domino) => {
+  const addToMatrix = (graph: AdjencyMatrix, domino: Domino) => {
     const [x, y] = domino;
     graph[nodeToBool(x)]![nodeToBool(y)] = true;
     graph[nodeToBool(y)]![nodeToBool(x)] = true;
@@ -59,7 +59,7 @@ const toAdjacencyMatrix: ToAdjacencyMatrix = (dominoes) => {
     return graph;
   };
 
-  return dominoes.reduce(fillMatrix, initMatrix);
+  return dominoes.reduce(addToMatrix, initMatrix);
 };
 
 type ToAdjencyList = (_: AdjencyMatrix) => AdjencyList;
@@ -89,7 +89,7 @@ const depthFirstSearch: DFS = (graph, visited, node) => {
 const isConnected: EulerCondition = (dominoes) => {
   const nodes = getNodes(dominoes);
   const visited: boolean[] = [...new Array(nodes.length)].map((_) => false);
-  const graph = toAdjencyList(toAdjacencyMatrix(dominoes));
+  const graph = toAdjencyList(toMatrix(dominoes));
 
   // time to spelunk
   depthFirstSearch(graph, visited, 0);
