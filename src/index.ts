@@ -50,17 +50,21 @@ So our solution now has two parts:
 ------------------------- DOMAIN -----------------------------------------
 */
 
-type Dnum = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+type NodeNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-type Domino = [Dnum, Dnum];
+type Domino = [NodeNumber, NodeNumber];
 
 type EdgeSet = Domino[]; // A representation of the set of edges in a graph
 
-type AdjencyMatrix = boolean[][]; // Representation of a graph as a matrix of filled/unfilled cells
+type AdjacencyMatrix = MatrixValue[][]; // Representation of a graph as a matrix of filled/unfilled cells
 
-type AdjencyList = number[][]; // Representation as a list of connected nodes
+type AdjacencyList = number[][]; // Representation as a list of connected nodes
 
-type EulerCondition = (ds: EdgeSet) => boolean; // Functions that test our Euler's theory
+type MatrixValue = "Filled" | "Empty";
+
+type NodeStatus = "Visited" | "Not Visited";
+
+type EulerCondition = (_: EdgeSet) => boolean; // Functions that test our Euler's theory
 
 // -------------------------- HELPER FUNCTIONS --------------------------
 
@@ -72,21 +76,21 @@ const getNodes: GetNodes = (dominoes) => [...new Set(dominoes.flatMap(id))];
 
 // ------------------------- CONVERSION FUNCTIONS -------------------
 
-type ToMatrix = (_: EdgeSet) => AdjencyMatrix;
+type ToMatrix = (_: EdgeSet) => AdjacencyMatrix;
 const toMatrix: ToMatrix = (dominoes) => {
   const nodes = getNodes(dominoes);
   const nodeToBool = (digit: number) =>
     nodes.findIndex((node) => node === digit);
 
   // initial graph of all false values
-  const initMatrix: AdjencyMatrix = Array.from(Array(nodes.length), () =>
-    [...new Array(nodes.length)].map((_) => false)
+  const initMatrix: AdjacencyMatrix = Array.from(Array(nodes.length), () =>
+    [...new Array(nodes.length)].map((_) => "Empty")
   );
 
-  const addToMatrix = (graph: AdjencyMatrix, domino: Domino) => {
+  const addToMatrix = (graph: AdjacencyMatrix, domino: Domino) => {
     const [x, y] = domino;
-    graph[nodeToBool(x)]![nodeToBool(y)] = true;
-    graph[nodeToBool(y)]![nodeToBool(x)] = true;
+    graph[nodeToBool(x)]![nodeToBool(y)] = "Filled";
+    graph[nodeToBool(y)]![nodeToBool(x)] = "Filled";
 
     return graph;
   };
@@ -94,13 +98,13 @@ const toMatrix: ToMatrix = (dominoes) => {
   return dominoes.reduce(addToMatrix, initMatrix);
 };
 
-type ToAdjencyList = (_: AdjencyMatrix) => AdjencyList;
-const toAdjencyList: ToAdjencyList = (graph) =>
+type ToAdjacencyList = (_: AdjacencyMatrix) => AdjacencyList;
+const toAdjacencyList: ToAdjacencyList = (graph) =>
   graph.map(
     (row) =>
       row
-        .map((val, index): [number, boolean] => [index, val]) // add indexes
-        .filter(([_, val]) => val) // filter unfilled cells
+        .map((val, index): [number, MatrixValue] => [index, val]) // add indexes
+        .filter(([_, val]) => val === "Empty") // filter unfilled cells
         .map(([index, _]) => index) // keep indexes
   );
 
@@ -111,9 +115,9 @@ It updates the visited array every time it gets to a new node.
 If a graph is connected, dfs should visit every node.
 
 */
-type DFS = (_: AdjencyList, __: boolean[], ___: number) => void;
+type DFS = (_: AdjacencyList, __: NodeStatus[], ___: number) => void;
 const depthFirstSearch: DFS = (graph, visited, node) => {
-  visited[node] = true;
+  visited[node] = "Visited";
 
   graph[node]!.filter((adjacent) => !visited[adjacent]) // get unvisited nodes
     .forEach((unvisitedNode) =>
@@ -124,13 +128,15 @@ const depthFirstSearch: DFS = (graph, visited, node) => {
 // determine if the domino array representing the edgeset of a graph is a connected graph
 const isConnected: EulerCondition = (dominoes) => {
   const nodes = getNodes(dominoes);
-  const visited: boolean[] = [...new Array(nodes.length)].map((_) => false);
-  const graph = toAdjencyList(toMatrix(dominoes));
+  const statuses: NodeStatus[] = [...new Array(nodes.length)].map(
+    (_) => "Not Visited"
+  );
+  const graph = toAdjacencyList(toMatrix(dominoes));
 
   // time to spelunk
-  depthFirstSearch(graph, visited, 0);
+  depthFirstSearch(graph, statuses, 0);
 
-  return visited.every((x) => x === true);
+  return statuses.every((x) => x === "Visited");
 };
 
 // check if every number in the dominoes has an even number of representations
