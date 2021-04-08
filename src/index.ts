@@ -71,15 +71,15 @@ type EulerCondition = (_: EdgeSet) => boolean; // Functions that test our Euler'
 const id = (x: any) => x; // yes, this returns itself.
 
 // simplifies an edgeset down to its unique nodes by converting to and from a set
-type GetNodes = (_: EdgeSet) => NodeNumber[];
-const getNodes: GetNodes = (dominoes) => [...new Set(dominoes.flatMap(id))];
+const getNodes = (dominoes: EdgeSet): NodeNumber[] => [
+  ...new Set(dominoes.flatMap(id))
+];
 
 // ------------------------- CONVERSION FUNCTIONS -------------------
 
-type ToMatrix = (_: EdgeSet) => AdjacencyMatrix;
-const toMatrix: ToMatrix = (dominoes) => {
+const toMatrix = (dominoes: EdgeSet) => {
   const nodes = getNodes(dominoes);
-  const nodeToBool = (digit: NodeNumber) =>
+  const nodeToIndex = (digit: NodeNumber) =>
     nodes.findIndex((node) => node === digit);
 
   // initial graph of all false values
@@ -89,8 +89,8 @@ const toMatrix: ToMatrix = (dominoes) => {
 
   const addToMatrix = (graph: AdjacencyMatrix, domino: Domino) => {
     const [x, y] = domino;
-    graph[nodeToBool(x)]![nodeToBool(y)] = "Filled";
-    graph[nodeToBool(y)]![nodeToBool(x)] = "Filled";
+    graph[nodeToIndex(x)]![nodeToIndex(y)] = "Filled";
+    graph[nodeToIndex(y)]![nodeToIndex(x)] = "Filled";
 
     return graph;
   };
@@ -98,8 +98,7 @@ const toMatrix: ToMatrix = (dominoes) => {
   return dominoes.reduce(addToMatrix, initMatrix);
 };
 
-type ToAdjacencyList = (_: AdjacencyMatrix) => AdjacencyList;
-const toAdjacencyList: ToAdjacencyList = (graph) =>
+const toAdjacencyList = (graph: AdjacencyMatrix): AdjacencyList =>
   graph.map(
     (row) =>
       row
@@ -110,12 +109,12 @@ const toAdjacencyList: ToAdjacencyList = (graph) =>
 
 /* --------------------- IMPLEMENTATION ---------------------------------
 
-Our depthfirstsearch function hecks to see what nodes can be visited from other nodes.
+Our depthfirstsearch (dfs) function checks to see what nodes can be visited from other nodes.
 It updates the visited array every time it gets to a new node.
 If a graph is connected, dfs should visit every node.
 
 */
-type DFS = (_: AdjacencyList, __: NodeStatus[], ___: number) => void;
+type DFS = (...args: [AdjacencyList, NodeStatus[], number]) => void;
 const depthFirstSearch: DFS = (graph, statuses, node) => {
   statuses[node] = "Visited";
 
@@ -125,7 +124,7 @@ const depthFirstSearch: DFS = (graph, statuses, node) => {
     );
 };
 
-// determine if the domino array representing the edgeset of a graph is a connected graph
+// determine if dominoes represent connected graph
 const isConnected: EulerCondition = (dominoes) => {
   const nodes = getNodes(dominoes);
   const statuses: NodeStatus[] = [...new Array(nodes.length)].map(
@@ -143,9 +142,9 @@ const isConnected: EulerCondition = (dominoes) => {
 const allEvenDegree: EulerCondition = (dominoes) => {
   const isEven = (n: number) => n % 2 === 0;
 
-  // adds to map of numbers in the domino set and how many times they appear
-  const addToMap = (m: Map<NodeNumber, number>, key: NodeNumber) =>
-    m.has(key) ? m.set(key, m.get(key)! + 1) : m.set(key, 1);
+  // creates a map of nodes and the amount of times they appear
+  const addToMap = (m: Map<NodeNumber, number>, node: NodeNumber) =>
+    m.has(node) ? m.set(node, m.get(node)! + 1) : m.set(node, 1);
 
   const nodeCounts: number[] = [
     ...dominoes
